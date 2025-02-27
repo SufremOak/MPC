@@ -1,0 +1,40 @@
+# Define the C compiler
+c_compiler = gcc
+
+# Define the Cython compiler
+cython_compiler = cython
+
+# Define the Python interpreter
+python_interpreter = python3
+
+# Build the main C program
+rule compile_c
+  command = $c_compiler -c $in -o $out
+  description = Compiling $in
+
+rule link_c
+  command = $c_compiler $in -o $out
+  description = Linking $out
+
+build src/main.o: compile_c src/main.c
+build mpc: link_c src/main.o
+
+# Build the Cython library
+rule cythonize
+  command = $cython_compiler $in -o $out
+  description = Cythonizing $in
+
+rule compile_cython
+  command = $c_compiler -c $in -o $out `python3-config --cflags`
+  description = Compiling $in
+
+rule link_cython
+  command = $c_compiler $in -o $out `python3-config --ldflags`
+  description = Linking $out
+
+build sdk/MCOLibrarySdk.c: cythonize sdk/MCOLibrarySdk.pyx
+build sdk/MCOLibrarySdk.o: compile_cython sdk/MCOLibrarySdk.c
+build sdk/MCOLibrarySdk.so: link_cython sdk/MCOLibrarySdk.o
+
+# Default target
+default mpc sdk/MCOLibrarySdk.so
